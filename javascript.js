@@ -113,108 +113,56 @@ function updateProgressBarAndFadeIn() {
 }
 
 function createRightSidebar() {
-    const content = document.getElementsByClassName('content')[0];
-    if (!content)
-        return;
+    const sections = document.querySelectorAll('.section');
+    const sidebar = document.getElementById('sidebarContent');
+    if (!sections || !sidebar) return;
 
-    const sections = content.getElementsByClassName('section');
-    if (!sections)
-        return;
+    sections.forEach(section => {
+        const div = document.createElement('div');
 
-    var sidebarContent = document.getElementById('sidebarContent');
-    if (!sidebarContent)
-        return;
+        const { id } = section;
+        const { innerText } = section.querySelector('h2');
 
-    for (var i = 0; i < sections.length; i++) {
-        var section = sections[i];
-        const headers = section.querySelectorAll('h2');
-        const cards = section.querySelectorAll('.card');
+        const b = document.createElement('b');
+        b.innerHTML = `<a href=${id}>${innerText}</a>`;
+        div.appendChild(b);
 
-        headers.forEach(header => {
-            if (!header.innerHTML || header.innerHTML.length == 0)
-                return;
-
-            // Create the section div
-            const sectionDiv = document.createElement('div');
-            sidebarContent.appendChild(sectionDiv);
-
-            // Create the header link
-            const bold = document.createElement('b');
-            sectionDiv.appendChild(bold);
-
-            const separator = document.createElement('a');
-            separator.href = `#${section.id}`;
-            separator.textContent = header.innerHTML;
-            bold.appendChild(separator);
-
-            // Create section links
-            cards.forEach(card => {
-                var text;
-                const title = card.getAttribute('title');
-                if (title && title.length > 0) {
-                    text = title;
-                }
-                else {
-                    text = card.id.replace(/([A-Z])/g, ' $1').trim();
-                }
-
-                if (!text || text.length == 0) {
-                    return;
-                }
-
-                const cardId = card.id;
-                const cardLink = document.createElement('a');
-                cardLink.href = `#${cardId}`;
-                cardLink.textContent = text;
-
-                sectionDiv.appendChild(cardLink);
-            })
+        const sectionCard = section.querySelectorAll('.card');
+        sectionCard.forEach(card => {
+            const { id, title } = card;
+            const a = document.createElement('a');
+            a.href = id;
+            a.innerText = title ? title : id.replace(/([A-Z])/g, ' $1').trim();
+            div.appendChild(a);
         });
-    };
-};
+        sidebar.appendChild(div);
+    });
+}
 
+const lsBar = () => document.querySelector('.left-sidebar');
+const currentPathname = window.location.pathname;
 
-function markActivePage() {
-    const leftSidebar = document.querySelector(".sidebar.left-sidebar");
+function linkUtil() {
+    const page = {};
+    const navLinksNode = lsBar().querySelectorAll('a');
+    navLinksNode.forEach((node, index) => {
+        const { href } = node;
 
-    if (!leftSidebar)
-        return;
-
-    const sidebarLinks = leftSidebar.querySelectorAll(".sidebar a");
-
-    if (!sidebarLinks)
-        return;
-
-    const currentPage = "./" + window.location.pathname.split("/").pop();
-
-    let currentIndex = -1;
-
-    // Loop through the links to find the current page index
-    sidebarLinks.forEach((link, index) => {
-        const linkPage = link.getAttribute("href");
-
-        if (linkPage === currentPage) {
-            link.classList.add("active");
-            currentIndex = index;
-
-            if (link.classList.contains("sublink")){
-                link.setAttribute('style', 'display:flex !important');
-            }
+        if (href.endsWith(currentPathname)) {
+            page.current = node;
+            page.before = navLinksNode[index - 1];
+            page.after = navLinksNode[index + 1];
         }
     });
+    return page;
+}
 
-    const allowedPageLinks = leftSidebar.querySelectorAll(".pageLinks");
-    if (allowedPageLinks) {
-        let linkCount = 0;
-
-        for (let i = 0; i < allowedPageLinks.length; i++) {
-            linkCount += allowedPageLinks[i].children.length;
-        }
-
-        if (currentIndex > linkCount - 1)
-            currentIndex = -1;
-
-        createPageArrows(currentIndex);
+function markActivePage() {
+    const currentNode = linkUtil().current;
+    const { href, classList } = currentNode;
+    classList.toggle('active', href.endsWith(currentPathname));
+    if (classList.contains('sublink')) {
+        currentNode.setAttribute('style', 'display:flex !important');
     }
 }
 
